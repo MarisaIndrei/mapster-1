@@ -84,14 +84,14 @@ public struct GeoFeature : BaseShape
                 break;
         }
 
-        if (!IsPolygon)
+        if (IsPolygon)
         {
-            var pen = new Pen(color, 1.2f);
-            context.DrawLines(pen, ScreenCoordinates);
+            context.FillPolygon(color, ScreenCoordinates);
         }
         else
         {
-            context.FillPolygon(color, ScreenCoordinates);
+            var pen = new Pen(color, 1.2f);
+            context.DrawLines(pen, ScreenCoordinates);
         }
     }
 
@@ -108,9 +108,12 @@ public struct GeoFeature : BaseShape
     public GeoFeature(ReadOnlySpan<Coordinate> c, MapFeatureData feature)
     {
         IsPolygon = feature.Type == GeometryType.Polygon;
-        var naturalKey = feature.Properties.FirstOrDefault(x => x.Key == "natural").Value;
+        var naturalKey = feature.Properties.FirstOrDefault(x => x.Key == MapElement.natural).Value;
         Type = GeoFeatureType.Unknown;
-        if (naturalKey != null)
+        if (naturalKey == null)
+        {
+        }
+        else
         {
             if (naturalKey == "fell" ||
                 naturalKey == "grassland" ||
@@ -187,12 +190,11 @@ public struct PopulatedPlace : BaseShape
 
     public void Render(IImageProcessingContext context)
     {
-        if (!ShouldRender)
+        if (ShouldRender)
         {
-            return;
+            var font = SystemFonts.Families.First().CreateFont(12, FontStyle.Bold);
+            context.DrawText(Name, font, Color.Black, ScreenCoordinates[0]);
         }
-        var font = SystemFonts.Families.First().CreateFont(12, FontStyle.Bold);
-        context.DrawText(Name, font, Color.Black, ScreenCoordinates[0]);
     }
 
     public PopulatedPlace(ReadOnlySpan<Coordinate> c, MapFeatureData feature)
@@ -202,36 +204,36 @@ public struct PopulatedPlace : BaseShape
         for (var i = 0; i < c.Length; i++)
             ScreenCoordinates[i] = new PointF((float)MercatorProjection.lonToX(c[i].Longitude),
                 (float)MercatorProjection.latToY(c[i].Latitude));
-        var name = feature.Properties.FirstOrDefault(x => x.Key == "name").Value;
+        var name = feature.Properties.FirstOrDefault(x => x.Key == MapElement.name).Value;
 
-        if (feature.Label.IsEmpty)
-        {
-            ShouldRender = false;
-            Name = "Unknown";
-        }
-        else
+        if (!feature.Label.IsEmpty)
         {
             Name = string.IsNullOrWhiteSpace(name) ? feature.Label.ToString() : name;
             ShouldRender = true;
+        }
+        else
+        {
+            ShouldRender = false;
+            Name = "Unknown";
         }
     }
 
     public static bool ShouldBePopulatedPlace(MapFeatureData feature)
     {
         // https://wiki.openstreetmap.org/wiki/Key:place
-        if (feature.Type != GeometryType.Point)
+        if (feature.Type == GeometryType.Point)
         {
+            foreach (var entry in feature.Properties)
+                if (entry.Key == MapElement.place)
+                {
+                    if (entry.Value.StartsWith("city") || entry.Value.StartsWith("town") ||
+                        entry.Value.StartsWith("locality") || entry.Value.StartsWith("hamlet"))
+                    {
+                        return true;
+                    }
+                }
             return false;
         }
-        foreach (var entry in feature.Properties)
-            if (entry.Key.StartsWith("place"))
-            {
-                if (entry.Value.StartsWith("city") || entry.Value.StartsWith("town") ||
-                    entry.Value.StartsWith("locality") || entry.Value.StartsWith("hamlet"))
-                {
-                    return true;
-                }
-            }
         return false;
     }
 }
@@ -264,11 +266,11 @@ public struct Border : BaseShape
         var foundLevel = false;
         foreach (var entry in feature.Properties)
         {
-            if (entry.Key.StartsWith("boundary") && entry.Value.StartsWith("administrative"))
+            if (entry.Key == MapElement.boundary && entry.Value.StartsWith("administrative"))
             {
                 foundBoundary = true;
             }
-            if (entry.Key.StartsWith("admin_level") && entry.Value == "2")
+            if (entry.Key == MapElement.admin_level && entry.Value == "2")
             {
                 foundLevel = true;
             }
@@ -290,14 +292,14 @@ public struct Waterway : BaseShape
 
     public void Render(IImageProcessingContext context)
     {
-        if (!IsPolygon)
+        if (IsPolygon)
         {
-            var pen = new Pen(Color.LightBlue, 1.2f);
-            context.DrawLines(pen, ScreenCoordinates);
+            context.FillPolygon(Color.LightBlue, ScreenCoordinates);
         }
         else
         {
-            context.FillPolygon(Color.LightBlue, ScreenCoordinates);
+            var pen = new Pen(Color.LightBlue, 1.2f);
+            context.DrawLines(pen, ScreenCoordinates);
         }
     }
 

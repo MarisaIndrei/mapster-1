@@ -13,7 +13,10 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        if (!(ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop))
+        {
+        }
+        else
         {
             desktop.MainWindow = new MainWindow();
         }

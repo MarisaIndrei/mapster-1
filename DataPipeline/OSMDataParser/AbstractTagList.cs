@@ -55,14 +55,15 @@ public class TagEnumerator : IEnumerator<Tag>
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposedValue)
+        if (_disposedValue)
         {
-            if (disposing)
-            {
-            }
-
-            _disposedValue = true;
+            return;
         }
+        if (disposing)
+        {
+        }
+
+        _disposedValue = true;
     }
 
     public void Dispose()

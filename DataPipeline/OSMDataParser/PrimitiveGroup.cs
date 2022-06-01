@@ -33,43 +33,46 @@ public class PrimitiveGroup : IEnumerable<AbstractElement>
 
         // Since a PrimitiveGroup only contains one type of item we look for the repetition that has a .Count > 0
         // to determinte the type of the whole group
-        if (_osmPrimitiveGroup.Nodes.Count > 0)
+        if (_osmPrimitiveGroup.Nodes.Count <= 0)
+        {
+            if (_osmPrimitiveGroup.Ways.Count > 0)
+            {
+                ElementGetter = GetWay;
+                ContainedType = ElementType.Way;
+                Count = _osmPrimitiveGroup.Ways.Count;
+            }
+            else if (_osmPrimitiveGroup.Relations.Count > 0)
+            {
+                ElementGetter = GetRelation;
+                ContainedType = ElementType.Relation;
+                Count = _osmPrimitiveGroup.Relations.Count;
+            }
+            else if (_osmPrimitiveGroup.Changesets.Count > 0)
+            {
+                ElementGetter = GetChangeSet;
+                ContainedType = ElementType.ChangeSet;
+                Count = _osmPrimitiveGroup.Changesets.Count;
+            }
+            else if (_osmPrimitiveGroup.Dense != null && _osmPrimitiveGroup.Dense.Id.Count > 1)
+            {
+                ElementGetter = GetNextDenseNode;
+                _denseNodes = new DenseNodes(_osmPrimitiveGroup.Dense, _primitiveBlock);
+
+                ContainedType = ElementType.Node;
+                Count = _denseNodes.Count;
+            }
+            else
+            {
+                ElementGetter = GetUnknown;
+                ContainedType = ElementType.Unknown;
+                Count = 0;
+            }
+        }
+        else
         {
             ElementGetter = GetNode;
             ContainedType = ElementType.Node;
             Count = _osmPrimitiveGroup.Nodes.Count;
-        }
-        else if (_osmPrimitiveGroup.Ways.Count > 0)
-        {
-            ElementGetter = GetWay;
-            ContainedType = ElementType.Way;
-            Count = _osmPrimitiveGroup.Ways.Count;
-        }
-        else if (_osmPrimitiveGroup.Relations.Count > 0)
-        {
-            ElementGetter = GetRelation;
-            ContainedType = ElementType.Relation;
-            Count = _osmPrimitiveGroup.Relations.Count;
-        }
-        else if (_osmPrimitiveGroup.Changesets.Count > 0)
-        {
-            ElementGetter = GetChangeSet;
-            ContainedType = ElementType.ChangeSet;
-            Count = _osmPrimitiveGroup.Changesets.Count;
-        }
-        else if (_osmPrimitiveGroup.Dense != null && _osmPrimitiveGroup.Dense.Id.Count > 1)
-        {
-            ElementGetter = GetNextDenseNode;
-            _denseNodes = new DenseNodes(_osmPrimitiveGroup.Dense, _primitiveBlock);
-
-            ContainedType = ElementType.Node;
-            Count = _denseNodes.Count;
-        }
-        else
-        {
-            ElementGetter = GetUnknown;
-            ContainedType = ElementType.Unknown;
-            Count = 0;
         }
     }
 
@@ -136,7 +139,9 @@ public class ElementEnumerator : IEnumerator<AbstractElement>
     public bool MoveNext()
     {
         if (_currentIndex >= _elementCount)
+        {
             return false;
+        }
 
         var element = _primitiveGroup.ElementGetter(_currentIndex++);
         element.SetStringTable(_primitiveGroup.StringTable);
@@ -152,14 +157,15 @@ public class ElementEnumerator : IEnumerator<AbstractElement>
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposedValue)
+        if (_disposedValue)
         {
-            if (disposing)
-            {
-            }
-
-            _disposedValue = true;
+            return;
         }
+        if (disposing)
+        {
+        }
+
+        _disposedValue = true;
     }
 
     public void Dispose()

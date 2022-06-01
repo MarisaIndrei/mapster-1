@@ -28,15 +28,16 @@ public class PBFFile : IEnumerable<Blob>
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposedValue)
+        if (_disposedValue)
         {
-            if (disposing)
-            {
-                _fileStream.Dispose();
-            }
-
-            _disposedValue = true;
+            return;
         }
+        if (disposing)
+        {
+            _fileStream.Dispose();
+        }
+
+        _disposedValue = true;
     }
 
     public void Dispose()

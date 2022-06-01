@@ -15,11 +15,12 @@ public class DataModel : INotifyPropertyChanged
         get { return _data; }
         set
         {
-            if (_data != value)
+            if (_data == value)
             {
-                _data = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Data)));
+                return;
             }
+            _data = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Data)));
         }
     }
 

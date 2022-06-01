@@ -61,11 +61,7 @@ class Detail
     {
         var data = blob.Content.Span;
 
-        if (!blob.IsCompressed)
-        {
-            return (new Protobuf.MessageParser<T>(() => new T())).ParseFrom(data);
-        }
-        else
+        if (blob.IsCompressed)
         {
             unsafe
             {
@@ -78,6 +74,10 @@ class Detail
                     }
                 }
             }
+        }
+        else
+        {
+            return (new Protobuf.MessageParser<T>(() => new T())).ParseFrom(data);
         }
     }
 }

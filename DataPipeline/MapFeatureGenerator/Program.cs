@@ -45,16 +45,16 @@ public static class Program
         foreach (var (id, node) in nodes)
         {
             var tileId = TiligSystem.GetTile(new Coordinate(node.Latitude, node.Longitude));
-            if (tiles.TryGetValue(tileId, out var nodeIds))
-            {
-                nodeIds.Add(id);
-            }
-            else
+            if (!tiles.TryGetValue(tileId, out var nodeIds))
             {
                 tiles[tileId] = new List<long>
                 {
                     id
                 };
+            }
+            else
+            {
+                nodeIds.Add(id);
             }
         }
 
@@ -144,40 +144,43 @@ public static class Program
 
                     foreach (var (key, value) in node.Tags)
                     {
-                        if (!featureData.PropertyKeys.keys.Contains(key))
+                        if (featureData.PropertyKeys.keys.Contains(key))
                         {
-                            featureData.PropertyKeys.keys.Add(key);
-                            featureData.PropertyValues.values.Add(value);
+                            continue;
                         }
+                        featureData.PropertyKeys.keys.Add(key);
+                        featureData.PropertyValues.values.Add(value);
                     }
 
                     featureData.Coordinates.coordinates.Add(new Coordinate(node.Latitude, node.Longitude));
                 }
 
                 // This feature is not located within this tile, skip it
-                if (featureData.Coordinates.coordinates.Count == 0)
+                if (featureData.Coordinates.coordinates.Count != 0)
+                {
+                    if (featureData.Coordinates.coordinates[0] == featureData.Coordinates.coordinates[^1])
+                    {
+                        geometryType = GeometryType.Polygon;
+                    }
+                    featureData.GeometryType = (byte)geometryType;
+
+                    totalPropertyCount += featureData.PropertyKeys.keys.Count;
+                    totalCoordinateCount += featureData.Coordinates.coordinates.Count;
+
+                    if (featureData.PropertyKeys.keys.Count != featureData.PropertyValues.values.Count)
+                    {
+                        throw new InvalidDataContractException("Property keys and values should have the same count");
+                    }
+
+                    featureIds.Add(featureId);
+                    featuresData.Add(featureId, featureData);
+                }
+                else
                 {
                     // Remove the last item since we added it preemptively
                     labels.RemoveAt(labels.Count - 1);
                     continue;
                 }
-
-                if (featureData.Coordinates.coordinates[0] == featureData.Coordinates.coordinates[^1])
-                {
-                    geometryType = GeometryType.Polygon;
-                }
-                featureData.GeometryType = (byte)geometryType;
-
-                totalPropertyCount += featureData.PropertyKeys.keys.Count;
-                totalCoordinateCount += featureData.Coordinates.coordinates.Count;
-
-                if (featureData.PropertyKeys.keys.Count != featureData.PropertyValues.values.Count)
-                {
-                    throw new InvalidDataContractException("Property keys and values should have the same count");
-                }
-
-                featureIds.Add(featureId);
-                featuresData.Add(featureId, featureData);
             }
 
             foreach (var (nodeId, node) in mapData.Nodes.Where(n => !usedNodes.Contains(n.Key)))
@@ -205,27 +208,29 @@ public static class Program
                     featurePropValues.Add(tag.Value);
                 }
 
-                if (featurePropKeys.Count != featurePropValues.Count)
+                if (featurePropKeys.Count == featurePropValues.Count)
                 {
-                    throw new InvalidDataContractException("Property keys and values should have the same count");
-                }
-
-                var fData = new FeatureData
-                {
-                    Id = featureId,
-                    GeometryType = (byte)GeometryType.Point,
-                    Coordinates = (totalCoordinateCount, new List<Coordinate>
+                    var fData = new FeatureData
+                    {
+                        Id = featureId,
+                        GeometryType = (byte)GeometryType.Point,
+                        Coordinates = (totalCoordinateCount, new List<Coordinate>
                     {
                         new Coordinate(node.Latitude, node.Longitude)
                     }),
-                    PropertyKeys = (totalPropertyCount, featurePropKeys),
-                    PropertyValues = (totalPropertyCount, featurePropValues)
-                };
-                featuresData.Add(featureId, fData);
-                featureIds.Add(featureId);
+                        PropertyKeys = (totalPropertyCount, featurePropKeys),
+                        PropertyValues = (totalPropertyCount, featurePropValues)
+                    };
+                    featuresData.Add(featureId, fData);
+                    featureIds.Add(featureId);
 
-                totalPropertyCount += featurePropKeys.Count;
-                ++totalCoordinateCount;
+                    totalPropertyCount += featurePropKeys.Count;
+                    ++totalCoordinateCount;
+                }
+                else
+                {
+                    throw new InvalidDataContractException("Property keys and values should have the same count");
+                }
             }
 
             offsets.Add(tileId, fileWriter.BaseStream.Position);
@@ -357,7 +362,10 @@ public static class Program
         var argParseResult =
             Parser.Default.ParseArguments<Options>(args).WithParsed(options => { arguments = options; });
 
-        if (argParseResult.Errors.Any())
+        if (!argParseResult.Errors.Any())
+        {
+        }
+        else
         {
             Environment.Exit(-1);
         }

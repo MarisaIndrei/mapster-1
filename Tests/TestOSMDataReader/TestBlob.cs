@@ -51,10 +51,11 @@ public class TestBlob
         {
             foreach (var nodeId in way.NodeIds)
             {
-                if (!nodes.ContainsKey(nodeId))
+                if (nodes.ContainsKey(nodeId))
                 {
-                    Console.Error.WriteLine($"Missing node: {nodeId}");
+                    continue;
                 }
+                Console.Error.WriteLine($"Missing node: {nodeId}");
             }
         }
     }

@@ -116,6 +116,7 @@ public struct PropertyEntryList
 [StructLayout(LayoutKind.Explicit, Pack = 1)]
 public struct MapFeature
 {
+    
     // https://wiki.openstreetmap.org/wiki/Key:highway
     public static string[] HighwayTypes =
     {

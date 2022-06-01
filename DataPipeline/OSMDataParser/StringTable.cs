@@ -55,7 +55,9 @@ internal class StringTableEnumerator : IEnumerator<string>
     public bool MoveNext()
     {
         if (_currentIndex >= _count)
+        {
             return false;
+        }
 
         _currentValue = _stringTable[_currentIndex++];
         return true;
@@ -68,14 +70,15 @@ internal class StringTableEnumerator : IEnumerator<string>
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposedValue)
+        if (_disposedValue)
         {
-            if (disposing)
-            {
-            }
-
-            _disposedValue = true;
+            return;
         }
+        if (disposing)
+        {
+        }
+
+        _disposedValue = true;
     }
 
     public void Dispose()

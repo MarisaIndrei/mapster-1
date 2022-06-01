@@ -67,7 +67,9 @@ public class PrimitiveGroupEnumerator : IEnumerator<PrimitiveGroup>
     public bool MoveNext()
     {
         if (_currentIndex >= _groupCount)
+        {
             return false;
+        }
 
         _currentPrimitiveGroup = _primitiveBlock[_currentIndex++];
         return true;
@@ -80,14 +82,15 @@ public class PrimitiveGroupEnumerator : IEnumerator<PrimitiveGroup>
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposedValue)
+        if (_disposedValue)
         {
-            if (disposing)
-            {
-            }
-
-            _disposedValue = true;
+            return;
         }
+        if (disposing)
+        {
+        }
+
+        _disposedValue = true;
     }
 
     public void Dispose()

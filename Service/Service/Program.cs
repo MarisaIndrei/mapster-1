@@ -20,7 +20,10 @@ internal static class Program
             arguments = options;
         });
 
-        if (argParseResult.Errors.Any())
+        if (!argParseResult.Errors.Any())
+        {
+        }
+        else
         {
             Environment.Exit(-1);
         }
